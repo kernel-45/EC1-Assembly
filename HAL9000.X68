@@ -44,8 +44,10 @@ FETCH:
         ;*** DECOD, llamar a la subrutina, y vaciar la pila correctamente,
         ;*** almacenando el resultado de la decodificacion en D1
 		   SUB.W #2, A7 ;RESERVAMOS ESPACIO EN LA PILA PARA EL VALOR QUE IRÁ EN D1
+		   MOVE.W EIR,-(A7)
     	   JSR DECOD ;SALTAMOS A LA SUBRUTINA QUE NOS INDICARÁ EL TIPO DE INSTRUCCIÓN DE LA QUE SE TRATA
-           MOVE.B (A7)+, D1 ;PONEMOS EL ID DE LA INSTRUCCION EN D1
+    	   MOVE.W (A7)+, EIR
+           MOVE.W (A7)+, D1 ;PONEMOS EL ID DE LA INSTRUCCION EN D1
     ;--- FBRDECOD: FIN SALTO A DECOD
     
     
@@ -114,8 +116,8 @@ ELSH:
         ;*** decodificacion, que debera ser de libreria, siguiendo la interfaz
         ;*** especificada en el enunciado
 DECOD:
-	MOVE.W D0, -(A7) ;MOVEMOS D0 A LA PILA PARA NO PERDER SU CONTENIDO
-	MOVE.W EIR, D0	 ;PONEMOS LA INSTRUCCIÓN EN D0
+	MOVE.W D0, -(A7)
+	MOVE.W 6(A7), D0
 	BTST #15, D0	 ;MIRAMOS EL BIT MÁS SIGNIFICATIVO
 	BEQ Z			 ;SALTA A Z SI EL BIT MÁS SIGNIFICATIVO ERA UN CERO
 	BTST #14, D0	 ;SI ERA UN 1 SIGUE AQUÍ
@@ -129,8 +131,7 @@ DECOD:
 	
 OZ: 				 ;10, ES UN EXIT
 	MOVE.W #7, 8(A7)
-	MOVE.W (A7)+, D0
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS
 OOZ: 				 ;110
 	BTST #12, D0
@@ -140,38 +141,38 @@ OOZ: 				 ;110
 	BEQ OOZOZ
 					 ;11011, ES UN AND
 	MOVE.W #11, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS	
 	
 OOZOZ: 				 ;11010, ES UN SUB
 	MOVE.W #10, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS
 OOOZ: 				 ;1110
 	BTST #11, D0
 	BEQ OOOZZ
 					 ;11101, ES UN ADQ
 	MOVE.W #13, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS					 
 OOOZZ: 				 ;11100, ES UN SET
 	MOVE.W #12, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS
 OOOOZ:				 ;11110, ES UN LSH 
 	MOVE.W #14, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS
 OOZZ: 	
 	BTST #11, D0
 	BEQ OOZZZ		 
 					 ;11001, ES UN ADD
 	MOVE.W #9, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS
 OOZZZ: 				 ;11000, ES UN COPY
 	MOVE.W #8, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS
 					
 Z: 					 ;SI ESTÁ AQUÍ EL BIT MÁS SIGNIFICATIVO ES 0
@@ -189,15 +190,15 @@ ZOZ: 			 	 ;010
 	BEQ ZOZZ		 
 					 ;0101, ES UN GOZ
 	MOVE.W #5, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS					 
 ZOOZ: 				 ;0110, ES UN GON
 	MOVE.W #6, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS
 ZOZZ: 				 ;0100, ES UN GOI
 	MOVE.W #4, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS
 ZZ: 				 ;00
 	BTST #13, D0
@@ -206,11 +207,11 @@ ZZ: 				 ;00
 	BEQ ZZOZ		 ;0010
 					 ;0011, ES UN STIP
 	MOVE.W #3, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS		
 ZZOZ: 				 ;0010, ES UN LOIP
 	MOVE.W #2, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS
 
 ZZZ: 				 ;000
@@ -218,10 +219,12 @@ ZZZ: 				 ;000
 	BEQ ZZZZ		 ;0000
 					 ;0001, ES UN STO
 	MOVE.W #1, 8(A7)
-	MOVE.W (A7)+, D0
+	JMP FINAL
 	RTS
 ZZZZ: 				 ;0000, ES UN LOA
 	MOVE.W #0, 8(A7)
+	JMP FINAL
+FINAL: 
 	MOVE.W (A7)+, D0
 	RTS
 	        ; ESCRIBID VUESTRO CODIGO AQUI
