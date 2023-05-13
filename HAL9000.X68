@@ -28,10 +28,13 @@ FETCH:
         ;*** En esta seccion debeis introducir el codigo necesario para cargar
         ;*** en el EIR la siguiente instruccion a ejecutar, indicada por el EPC,
 	    ;*** y dejar listo el EPC para que apunte a la siguiente instruccion
-	
-	LEA EMEM, A0 ;CARGAMOS LA DIRECCI�N DEL VECTOR DE INSTRUCCIONES EN A0
-	MOVE.W EPC(A0), EIR	    
-        
+
+	LEA EMEM, A0 ;CARGAMOS LA DIRECCIÓN DEL VECTOR DE INSTRUCCIONES EN A0
+	MOVE.W EPC, A1
+	ADDQ.W #1, EPC
+	ADDA.W A0, A1
+	ADDA.W A0, A1
+	MOVE.W (A0), EIR	    
     ;--- FFETCH: FIN FETCH
     
     
@@ -40,9 +43,9 @@ FETCH:
         ;*** En esta seccion debeis preparar la pila para llamar a la subrutina
         ;*** DECOD, llamar a la subrutina, y vaciar la pila correctamente,
         ;*** almacenando el resultado de la decodificacion en D1
-
-    	   JSR DECOD   	    
-        
+		   SUB.W #2, A7 ;RESERVAMOS ESPACIO EN LA PILA PARA EL VALOR QUE IRÁ EN D1
+    	   JSR DECOD ;SALTAMOS A LA SUBRUTINA QUE NOS INDICARÁ EL TIPO DE INSTRUCCIÓN DE LA QUE SE TRATA
+           MOVE.B (A7)+, D1 ;PONEMOS EL ID DE LA INSTRUCCION EN D1
     ;--- FBRDECOD: FIN SALTO A DECOD
     
     
@@ -125,7 +128,10 @@ DECOD:
 	BEQ OOOOZ		 ;11110
 	
 OZ: 				 ;10, ES UN EXIT
-
+	MOVE.W #7, 8(A7)
+	MOVE.W (A7)+, D0
+	MOVE.W (A7)+, D0
+	RTS
 OOZ: 				 ;110
 	BTST #12, D0
 	BEQ OOZZ		 
@@ -133,24 +139,40 @@ OOZ: 				 ;110
 	BTST #11, D0
 	BEQ OOZOZ
 					 ;11011, ES UN AND
+	MOVE.W #11, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS	
 	
 OOZOZ: 				 ;11010, ES UN SUB
-
+	MOVE.W #10, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS
 OOOZ: 				 ;1110
 	BTST #11, D0
 	BEQ OOOZZ
 					 ;11101, ES UN ADQ
-					 
+	MOVE.W #13, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS					 
 OOOZZ: 				 ;11100, ES UN SET
-
+	MOVE.W #12, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS
 OOOOZ:				 ;11110, ES UN LSH 
-
+	MOVE.W #14, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS
 OOZZ: 	
 	BTST #11, D0
 	BEQ OOZZZ		 
 					 ;11001, ES UN ADD
+	MOVE.W #9, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS
 OOZZZ: 				 ;11000, ES UN COPY
-
+	MOVE.W #8, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS
 					
 Z: 					 ;SI ESTÁ AQUÍ EL BIT MÁS SIGNIFICATIVO ES 0
 	BTST #14, D0
@@ -164,28 +186,46 @@ Z: 					 ;SI ESTÁ AQUÍ EL BIT MÁS SIGNIFICATIVO ES 0
 					 ;NADA
 ZOZ: 			 	 ;010
 	BTST #12, D0
-	BEQ Z0ZZ		 
+	BEQ ZOZZ		 
 					 ;0101, ES UN GOZ
-					 
-Z00Z: 				 ;0110, ES UN GON
-
+	MOVE.W #5, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS					 
+ZOOZ: 				 ;0110, ES UN GON
+	MOVE.W #6, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS
 ZOZZ: 				 ;0100, ES UN GOI
-
+	MOVE.W #4, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS
 ZZ: 				 ;00
 	BTST #13, D0
 	BEQ ZZZ			 ;000
 	BTST #12, D0	 ;001
 	BEQ ZZOZ		 ;0010
-ZZ0Z: 				 ;0010, ES UN LOIP
 					 ;0011, ES UN STIP
+	MOVE.W #3, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS		
+ZZOZ: 				 ;0010, ES UN LOIP
+	MOVE.W #2, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS
+
 ZZZ: 				 ;000
 	BTST #12, D0
 	BEQ ZZZZ		 ;0000
 					 ;0001, ES UN STO
+	MOVE.W #1, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS
 ZZZZ: 				 ;0000, ES UN LOA
+	MOVE.W #0, 8(A7)
+	MOVE.W (A7)+, D0
+	RTS
 	        ; ESCRIBID VUESTRO CODIGO AQUI
 
     ;--- FDECOD: FIN DECOD
     END    START
-
 
