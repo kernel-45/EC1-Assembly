@@ -5,7 +5,7 @@
 * Description: Emulador de la HAL9000
 *-----------------------------------------------------------
     ORG $1000
-EMEM:   DC.W $E082,$E09B,$E0B4,$E01D,$2020,$C006,$2031,$C017,$F160
+EMEM:   DC.W $2020,$E082,$E09B,$E0B4,$E01D,$C006,$2031,$C017,$F160
         DC.W $F170,$CE70,$3040,$EFFD,$501E,$4008,$8000,$0001
         DC.W $0001,$0001,$0001,$0001,$0001,$0000,$0000,$0000
 EIR:    DC.W 0 ;eregistro de instruccion
@@ -84,7 +84,19 @@ JMPLIST:
 	; ESCRIBID EN CADA ETIQUETA LA FASE DE EJECUCION DE CADA INSTRUCCION
 ELOA:
 ESTO:
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ELOIP:
+	;ESTA INSTRUCCIÓN NOS DEJARÁ EN D4 EL BIT DE I
+	JSR DECODI
+	;ESTA INSTRUCCION NOS DEJARA EN D2 EL BIT DE B
+	JSR DECODB
+	;ESTA INSTRUCCION DEJARÁ EN D2 EL VALOR DEL REGISTRO b
+	JSR OBTENERB
+	;ESTA INSTRUCCIÓN ALMACENARÁ EN Ti EL VALOR DEL REGISTRO
+	MOVE.W D2, -(A7) 
+	JSR ALMACENARTi
+	JMP FETCH
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESTIP:
 EGOI:
 EGOZ:
@@ -106,7 +118,76 @@ ELSH:
         ;*** SALVO DECOD, que va en la siguiente seccion
 
 	        ; ESCRIBID VUESTRO CODIGO AQUI
-        
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DECODI:
+		MOVE.W (EIR), D4
+		AND #%0000000000000001, D4
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OBTENERI:
+		CMP #0, D4
+		BEQ .RegT0
+		;SI NO HA SALTADO, ES T1
+		MOVE.W (ET1), D4
+		RTS
+.RegT0: 
+		MOVE.W (ET0), D4
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~		
+DECODB: 
+		MOVE.W (EIR), D2
+		AND #%0000000001110000, D2
+		ASR #4, D2
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OBTENERB:
+		MOVE.W D4, -(A7)
+		JSR VALORREGISTRO
+		MOVE.W D0, D4
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+VALORREGISTRO: ;PARA QUE FUNCIONE PRIMERO HAY QUE PASAR EL NUMERO DE REGISTRO A LA PILA
+		MOVE.W 4(A7), D0
+		CMP #2, D0
+		BEQ .RegX2
+		CMP #3, D0
+		BEQ .RegX3
+		CMP #4, D0
+		BEQ .RegX4
+		CMP #5, D0
+		BEQ .RegX5
+		CMP #6, D0
+		BEQ .RegX6
+		;SI LLEGA AQUÍ ES EL REGISTRO X7
+		MOVE.W (EX7), D0
+		RTS
+.RegX2
+		MOVE.W (EX2), D0
+		RTS
+.RegX3
+		MOVE.W (EX3), D0
+		RTS
+.RegX4
+		MOVE.W (EX4), D0
+		RTS
+.RegX5
+		MOVE.W (EX5), D0
+		RTS
+.RegX6	
+		MOVE.W (EX6), D0
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ALMACENARTi ;PRIMERO HAY QUE PASAR EL VALOR QUE QUEREMOS ALMACENAR A LA PILA Y TENER EN D4 EL BIT QUE INDICA QUE Ti ES
+		MOVE.W 4(A7), D0
+		CMP #0, D4
+		BEQ .RegT0
+		;SI NO HA SALTADO, ES T1
+		MOVE.W D0,ET1
+		RTS
+.RegT0: 
+		MOVE.W D0,ET0
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ;--- FSUBR: FIN SUBRUTINAS
     
     
