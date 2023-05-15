@@ -83,10 +83,7 @@ JMPLIST:
 	
 	; ESCRIBID EN CADA ETIQUETA LA FASE DE EJECUCION DE CADA INSTRUCCION
 ELOA:
-	JMP FETCH
-;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESTO:
-	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ELOIP:
 	;ESTA INSTRUCCIÓN NOS DEJARÁ EN D4 EL BIT DE I
@@ -98,10 +95,10 @@ ELOIP:
 	;ESTA INSTRUCCIÓN ALMACENARÁ EN Ti EL VALOR DEL REGISTRO
 	MOVE.W D2, -(A7) 
 	JSR ALMACENARTi
+	JSR ACTFLAGS
 	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESTIP:
-	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EGOI:
 	;ESTA INSTRUCCION DEJA m EN D5
@@ -110,34 +107,58 @@ EGOI:
 	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EGOZ:
-	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EGON:
+	JSR OBTENERM
+	BTST #1, ESR
+	BEQ .NoSalto
+	MOVE.W D5, EPC
+.NoSalto
 	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EEXIT:
-	SIMHALT
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ECOPY:
+	JSR DECODB
+	JSR OBTENERB
+	;TENEMOS EL VALOR DE B EN D2
+	JSR DECODC
+	;TENEMOS EL NUMERO DE REGISTRO DE C EN D3
+	MOVE.W D3, -(A7)
+	MOVE.W D2, -(A7)
+	JSR ALMACENARENREGISTRO ;LE TENEMOS QUE PASAR EL NÚERO DE REGISTRO EN EL QUE QUERAMOS ALMACENAR Y EL VALOR POR LA PILA
 	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EADD:
-	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESUB:
-	JMP FETCH
+	JSR DECODB
+	JSR OBTENERB
+	JSR DECODA
+	JSR OBTENERA
+	JSR DECODC
+	MOVE.W D3, -(A7)
+	MOVE.W D2, D0
+	NEG.W D1
+	ADD.W #1, D1
+	ADD.W D1, D0
+	MOVE.W D0, -(A7)
+	JSR ALMACENARENREGISTRO
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EAND:
-	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESET:
-	JMP FETCH
+	JSR DECODK
+	;TENEMOS EN D0 EL VALOR DE K
+	EXT.W D0
+	JSR DECODC
+	MOVE.W D3, -(A7)
+	MOVE.W D0, -(A7)
+	JSR ALMACENARENREGISTRO
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EADQ:
-	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ELSH:
-	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ;--- FEXEC: FIN EJECUCION
     
@@ -164,20 +185,55 @@ OBTENERI:
 		MOVE.W (ET0), D4
 		RTS
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~		
+DECODA: 
+		MOVE.W (EIR), D1
+		AND #%0000011100000000, D1
+		ASR #8, D1
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~		
 DECODB: 
 		MOVE.W (EIR), D2
 		AND #%0000000001110000, D2
 		ASR #4, D2
 		RTS
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-OBTENERB:
-		MOVE.W D4, -(A7)
-		JSR VALORREGISTRO
-		MOVE.W D0, D4
+DECODC: 
+		MOVE.W (EIR), D3
+		AND #%0000000000000111, D3
 		RTS
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+DECODK:
+		MOVE.W (EIR), D0
+		AND #%0000011111111000, D0
+		ASR #3, D0
+		RTS
+
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OBTENERA:
+		MOVE.W D1, -(A7)
+		JSR VALORREGISTRO
+		MOVE.W D0, D1
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OBTENERB:
+		MOVE.W D2, -(A7)
+		JSR VALORREGISTRO
+		MOVE.W D0, D2
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OBTENERC:
+		MOVE.W D3, -(A7)
+		JSR VALORREGISTRO
+		MOVE.W D0, D3
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 VALORREGISTRO: ;PARA QUE FUNCIONE PRIMERO HAY QUE PASAR EL NUMERO DE REGISTRO A LA PILA
 		MOVE.W 4(A7), D0
+		CMP #0, D0
+		BEQ .RegX0
+		CMP #1, D0
+		BEQ .RegX1
 		CMP #2, D0
 		BEQ .RegX2
 		CMP #3, D0
@@ -190,6 +246,12 @@ VALORREGISTRO: ;PARA QUE FUNCIONE PRIMERO HAY QUE PASAR EL NUMERO DE REGISTRO A 
 		BEQ .RegX6
 		;SI LLEGA AQUÍ ES EL REGISTRO X7
 		MOVE.W (EX7), D0
+		RTS
+.RegX0
+		MOVE.W (ET0), D0
+		RTS
+.RegX1
+		MOVE.W (ET1), D0
 		RTS
 .RegX2
 		MOVE.W (EX2), D0
@@ -236,7 +298,77 @@ ACTFLAGS: ;ACTUALIZA LOS FLAGS DE LA MÁQUINA VIRTUAL CNZ
 		BCLR #2, ESR
 .FLAGN: 
 		BTST #3, D6
-		
+		BEQ .FN0
+		BSET #1, ESR
+		JMP .FLAGZ
+.FN0	
+		BCLR #1, ESR
+.FLAGZ
+		BTST #2, D6
+		BEQ .FZ0
+		BSET #0, ESR
+		RTS
+.FZ0
+		BCLR #0, ESR
+		RTS 		
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+ALMACENARENREGISTRO: ;EL ÚLTIMO VALOR DE LA PILA ES EL NUMERO DE REGISTRO Y EL PENULTIMO EL VALOR A ALMACENAR
+		MOVE.W 6(A7), D0
+		CMP #0, D0
+		BEQ .RegT0
+		CMP #1, D0
+		BEQ .RegT1
+		CMP #2, D0
+		BEQ .RegR2
+		CMP #3, D0
+		BEQ .RegR3
+		CMP #4, D0
+		BEQ .RegR4
+		CMP #5, D0
+		BEQ .RegR5
+		CMP #6, D0
+		BEQ .RegR6
+		;SI LLEGA AQUÍ ES EL REGISTRO X7
+		MOVE.W 4(A7), D0
+		MOVE.W D0, EX7
+		JSR ACTFLAGS
+		RTS
+.RegT0
+		MOVE.W 4(A7), D0
+		MOVE.W D0, ET0
+		JSR ACTFLAGS
+		RTS
+.RegT1
+		MOVE.W 4(A7), D0
+		MOVE.W D0, ET1
+		JSR ACTFLAGS
+		RTS
+.RegR2
+		MOVE.W 4(A7), D0
+		MOVE.W D0, EX2
+		JSR ACTFLAGS
+		RTS
+.RegR3
+		MOVE.W 4(A7), D0
+		MOVE.W D0, EX3
+		JSR ACTFLAGS
+		RTS
+.RegR4
+		MOVE.W 4(A7), D0
+		MOVE.W D0, EX4
+		JSR ACTFLAGS
+		RTS
+.RegR5
+		MOVE.W 4(A7), D0
+		MOVE.W D0, EX5
+		JSR ACTFLAGS
+		RTS
+.RegR6	
+		MOVE.W 4(A7), D0
+		MOVE.W D0, EX6
+		JSR ACTFLAGS
+		RTS
+
     ;--- FSUBR: FIN SUBRUTINAS
     
     
