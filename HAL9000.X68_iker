@@ -144,6 +144,7 @@ ESUB:
 	ADD.W D1, D0
 	MOVE.W D0, -(A7)
 	JSR ALMACENARENREGISTRO
+	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EAND:
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -155,10 +156,30 @@ ESET:
 	MOVE.W D3, -(A7)
 	MOVE.W D0, -(A7)
 	JSR ALMACENARENREGISTRO
+	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EADQ:
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ELSH:
+	JSR DECODB
+	MOVE.W D2, -(A7)
+	JSR OBTENERB
+	;AHORA TENEMOS EL CONTENIDO DE B EN D2
+	JSR OBTENERP
+	;AHORA TENEMOS EL VALOR DE P EN D0
+	JSR OBTENERI
+	;AHORA TENEMOS EL BIT N EN D4
+	CMP #0, D4
+	BEQ .SHL
+	ASR D0, D2
+	MOVE.W D2, -(A7)
+	JSR ALMACENARENREGISTRO
+	JMP FETCH
+.SHL
+	ASL D0, D2
+	MOVE.W D2, -(A7)
+	JSR ALMACENARENREGISTRO
+	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ;--- FEXEC: FIN EJECUCION
     
@@ -225,6 +246,12 @@ OBTENERC:
 		MOVE.W D3, -(A7)
 		JSR VALORREGISTRO
 		MOVE.W D0, D3
+		RTS
+;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+OBTENERP:
+		MOVE.W (EIR), D0
+		AND #%0000011100000000, D0
+		ASR #8, D0
 		RTS
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
