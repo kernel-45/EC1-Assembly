@@ -1,13 +1,11 @@
 *-----------------------------------------------------------
 * Title      : PRAFIN23
-* Written by : Iker García de León Segui y Adrián Morales Orta
+* Written by : Iker García de León Seui y Adrián Morales Orta
 * Date       : 19/05/2023
 * Description: Emulador de la HAL9000
 *-----------------------------------------------------------
     ORG $1000
-EMEM: DC.W $E082,$E09B,$E0B4,$E01D,$2020,$C006,$2031,$C017,$F160
-	  DC.W $F170,$CE70,$3040,$EFFD,$501E,$4008,$8000,$0001
-      DC.W $0001,$0001,$0001,$0001,$0001,$0000,$0000,$0000
+EMEM: DC.W $000F,$C012,$400A,$D222,$8000,$CA22,$8000,$0001
 EIR:    DC.W 0 ;eregistro de instruccion
 EPC:    DC.W 0 ;econtador de programa
 ET0:    DC.W 0 ;eregistro T0
@@ -87,11 +85,13 @@ ELOA:
     JSR OBTENERM ; M ESTA EN D5
     LEA EMEM, A2
     ADD.W D5, A2
+    ADD.W D5, A2
     JSR DECODI ; Ti ESTA EN D4
     MOVE.W (A2),-(A7) ; GUARDA EL VALOR DE M EN Ti
     JSR ACTFLAGNZ
     JSR ALMACENARTi
     ADD.W #2, A7
+    JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESTO:
 	MOVE.W (EIR), D0
@@ -99,6 +99,7 @@ ESTO:
     JSR OBTENERI ; EL VALOR DE Ti ESTA EN D4
     LEA EMEM, A2
     JSR OBTENERM ; M ESTA EN D5
+    ADD.W D5, A2
     ADD.W D5, A2
     MOVE.W D4,(A2) ; GUARDA EL VALOR DE Ti EN M
     JMP FETCH
