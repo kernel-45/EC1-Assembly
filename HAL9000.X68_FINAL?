@@ -1,6 +1,6 @@
 *-----------------------------------------------------------
 * Title      : PRAFIN23
-* Written by : Iker García de León Seui y Adrián Morales Orta
+* Written by : Iker García de León Segui y Adrián Morales Orta
 * Date       : 19/05/2023
 * Description: Emulador de la HAL9000
 *-----------------------------------------------------------
@@ -84,15 +84,19 @@ JMPLIST:
 	; ESCRIBID EN CADA ETIQUETA LA FASE DE EJECUCION DE CADA INSTRUCCION
 ELOA:
     JSR OBTENERM ; M ESTA EN D5
+    LEA EMEM, A2
+    ADD.W D5, A2
     JSR DECODI ; Ti ESTA EN D4
-    MOVE.W (D5),-(A7) ; GUARDA EL VALOR DE M EN Ti
+    MOVE.W (A2),-(A7) ; GUARDA EL VALOR DE M EN Ti
     JSR ALMACENARTi
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESTO:
     JSR DECODI
     JSR OBTENERI ; EL VALOR DE Ti ESTA EN D4
+    LEA EMEM, A2
     JSR OBTENERM ; M ESTA EN D5
-    MOVE.W D4,(D5) ; GUARDA EL VALOR DE Ti EN M
+    ADD.W D5, A2
+    MOVE.W D4,(A2) ; GUARDA EL VALOR DE Ti EN M
     JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ELOIP:
@@ -621,8 +625,3 @@ FINAL:
 
     ;--- FDECOD: FIN DECOD
     END    START
-
-*~Font name~Courier New~
-*~Font size~10~
-*~Tab type~1~
-*~Tab size~4~
