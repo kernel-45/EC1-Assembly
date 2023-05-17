@@ -1,6 +1,6 @@
 *-----------------------------------------------------------
 * Title      : PRAFIN23
-* Written by : Iker García de León Segui y Adrián Morales Orta
+* Written by : Iker García de León Seui y Adrián Morales Orta
 * Date       : 19/05/2023
 * Description: Emulador de la HAL9000
 *-----------------------------------------------------------
@@ -89,6 +89,7 @@ ELOA:
     JSR DECODI ; Ti ESTA EN D4
     MOVE.W (A2),-(A7) ; GUARDA EL VALOR DE M EN Ti
     JSR ALMACENARTi
+    ADD.W #2, A7
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESTO:
     JSR DECODI
@@ -111,9 +112,10 @@ ELOIP:
 	LEA EMEM, A2
 	ADD.W D2, A2
 	;ESTA INSTRUCCIÓN ALMACENARÁ EN Ti EL VALOR DEL REGISTRO
-	MOVE.W (A2), -(A7)
 	JSR ACTFLAGS
+	MOVE.W A2, -(A7)
 	JSR ALMACENARTi
+	ADD.W #2, A7
 	;SUMAMOS UNO AL VALOR QUE CONTENÍA ANTES EL REGISTRO B
 	JSR OBTENERB
 	MOVE.W D2, -(A7)
@@ -122,6 +124,7 @@ ELOIP:
 	MOVE.W D2,-(A7)
 	;VOLVEMOS A ALMACENAR EL REGISTRO 
 	JSR ALMACENARENREGISTRO
+	ADD.W #4, A7
 	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESTIP:
@@ -131,13 +134,15 @@ ESTIP:
     MOVE.W D2,-(A7)
     MOVE.W D4,-(A7)
     JSR ALMACENARENREGISTRO
+    ADD.W #4, A7
     JMP FETCH
     
     MOVE.W D2,-(A7) ; INTRODUCIMOS EL NUMERO DE REGISTRO
     JSR OBTENERB
     ADDQ.W #1,D2
     MOVE.W D2,-(A7) ; ACTUALIZA B AUMENTANDO SU VALOR EN 1
-	JSR ALMACENARENREGISTRO 
+	JSR ALMACENARENREGISTRO
+	ADD.W #4, A7 
 	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EGOI:
@@ -176,7 +181,7 @@ ECOPY:
 	MOVE.W D3, -(A7)
 	MOVE.W D2, -(A7)
 	JSR ALMACENARENREGISTRO ;LE TENEMOS QUE PASAR EL NÚERO DE REGISTRO EN EL 
-                            ;QUE QUERAMOS ALMACENAR Y EL VALOR POR LA PILA
+    ADD.W #4, A7                        ;QUE QUERAMOS ALMACENAR Y EL VALOR POR LA PILA
 	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EADD:
@@ -190,6 +195,7 @@ EADD:
     JSR ACTFLAGS
     MOVE.W D2,-(A7)
     JSR ALMACENARENREGISTRO
+    ADD.W #4, A7
     JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESUB:
@@ -206,6 +212,7 @@ ESUB:
 	JSR ACTFLAGS
 	MOVE.W D0, -(A7)
 	JSR ALMACENARENREGISTRO
+	ADD.W #4, A7
 	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EAND:
@@ -220,6 +227,7 @@ EAND:
 	JSR ACTFLAGN
     MOVE.W D2,-(A7)
     JSR ALMACENARENREGISTRO
+    ADD.W #4, A7
     JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ESET:
@@ -232,6 +240,7 @@ ESET:
 	MOVE.W D3, -(A7)
 	MOVE.W D0, -(A7)
 	JSR ALMACENARENREGISTRO
+	ADD.W #4, A7
 	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 EADQ:
@@ -244,6 +253,7 @@ EADQ:
     JSR ACTFLAGS
     MOVE.W D0,-(A7)
     JSR ALMACENARENREGISTRO
+    ADD.W #4, A7
     JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ELSH:
@@ -261,12 +271,14 @@ ELSH:
 	JSR ACTFLAGS
 	MOVE.W D2, -(A7)
 	JSR ALMACENARENREGISTRO
+	ADD.W #4, A7
 	JMP FETCH
 .SHL
 	ASL D0, D2
 	JSR ACTFLAGS
 	MOVE.W D2, -(A7)
 	JSR ALMACENARENREGISTRO
+	ADD.W #4, A7
 	JMP FETCH
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     ;--- FEXEC: FIN EJECUCION
@@ -321,18 +333,24 @@ DECODK:
 OBTENERA:
 		MOVE.W D1, -(A7)
 		JSR VALORREGISTRO
+		;
+		ADD.W #2, A7
 		MOVE.W D0, D1
 		RTS
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 OBTENERB:
 		MOVE.W D2, -(A7)
 		JSR VALORREGISTRO
+		;
+		ADD.W #2, A7
 		MOVE.W D0, D2
 		RTS
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 OBTENERC:
 		MOVE.W D3, -(A7)
 		JSR VALORREGISTRO
+		;
+		ADD.W #2, A7
 		MOVE.W D0, D3
 		RTS
 ;~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
